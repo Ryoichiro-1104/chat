@@ -9,7 +9,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from django.utils.translation import ugettext_lazy as _
-from .models import User
+from .models import User, Occupation, Room
 
 
 class MyUserChangeForm(UserChangeForm):
@@ -45,5 +45,13 @@ class MyUserAdmin(UserAdmin):
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
 
+
+@admin.register(Occupation)
+class OccupationAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(Room)
+class RoomAdmin(admin.ModelAdmin):
+    pass
 
 admin.site.register(User, MyUserAdmin)

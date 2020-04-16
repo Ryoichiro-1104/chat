@@ -1,35 +1,35 @@
-""" from django.db import models
-from django.contrib.auth.models import AbstractUser
-from datetime import date
-from django.core.exceptions import ValidationError
-# Create your models here.
-def check_birthday (value):
-    if value > date.today():
-        raise ValidationError('生年月日が不正です')
+# """ from django.db import models
+# from django.contrib.auth.models import AbstractUser
+# from datetime import date
+# from django.core.exceptions import ValidationError
+# # Create your models here.
+# def check_birthday (value):
+#     if value > date.today():
+#         raise ValidationError('生年月日が不正です')
 
-class Occupation(models.Model):
-    name = models.CharField(blank=False,max_length=100)
-    category = models.CharField(max_length=100)
+# class Occupation(models.Model):
+#     name = models.CharField(blank=False,max_length=100)
+#     category = models.CharField(max_length=100)
 
-    def __str__(self):
-        return self.name
+#     def __str__(self):
+#         return self.name
 
-class User(AbstractUser):
-    class Meta:
-        db_table = 'user'
+# class User(AbstractUser):
+#     class Meta:
+#         db_table = 'user'
 
-    gender_choices = [
-        ('男','男'),
-        ('女','女')
-    ]
+#     gender_choices = [
+#         ('男','男'),
+#         ('女','女')
+#     ]
 
-    name = models.CharField(blank=False, max_length=100)
-    gender = models.CharField(choices=gender_choices,default='男',max_length=100)
-    birthday = models.DateField(null=True)
-    email = models.CharField(unique=True,max_length=100)
-    Occupation = models.ForeignKey(Occupation,null=True,on_delete=models.SET_NULL)
-    password = models.CharField(max_length=30)
- """
+#     name = models.CharField(blank=False, max_length=100)
+#     gender = models.CharField(choices=gender_choices,default='男',max_length=100)
+#     birthday = models.DateField(null=True)
+#     email = models.CharField(unique=True,max_length=100)
+#     Occupation = models.ForeignKey(Occupation,null=True,on_delete=models.SET_NULL)
+#     password = models.CharField(max_length=30)
+#  """
 
 from django.db import models
 from django.core.mail import send_mail
@@ -66,6 +66,12 @@ class CustomUserManager(UserManager):
             raise ValueError('Superuser must have is_superuser=True.')
         return self._create_user(email, password, **extra_fields)
 
+class Occupation(models.Model):
+    name = models.CharField(blank=False,max_length=100)
+    category = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
 
 class User(AbstractBaseUser, PermissionsMixin):
     """カスタムユーザーモデル."""
@@ -73,6 +79,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_('email address'), unique=True)
     first_name = models.CharField(_('first name'), max_length=30, blank=True)
     last_name = models.CharField(_('last name'), max_length=150, blank=True)
+    occupation = models.ForeignKey(Occupation,null=True,on_delete=models.SET_NULL)
 
     is_staff = models.BooleanField(
         _('staff status'),
@@ -123,4 +130,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         return self.email
 
+class Room(models.Model):
+    name=models.CharField(max_length=50,blank=False)
+    occupation=models.ForeignKey(Occupation,null=True,on_delete=models.SET_NULL)
+    users=models.ManyToManyField(User,blank=True)
 
+    def __str__(self):
+        return self.name

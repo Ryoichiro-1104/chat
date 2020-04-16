@@ -1,4 +1,32 @@
 {% extends "register/base_login.html" %}
+
 {% block content %}
-<p>ここに、好きな内容を入れる。</p>
+
+{% if user.is_authenticated %}
+
+<p>{{user.email}}</p>
+<p>あなたの職業は：{{ user.occupation }}</p>
+<a href="{% url 'chat:index' %}">チャット</a>
+
+<p>あなたの職業に関連したチャットルーム</p>
+{% for room in rooms %}
+<div class="room">
+    <p>{{ room.name }}</p>
+    
+</div>
+{% endfor %}
+
+<p>その他のチャットルーム</p>
+{% for room in other_rooms %}
+<div>
+    <p>{{room.name}}</p>
+</div>
+{% endfor %}
+{% else %}
+
+<p class="test">ここに、好きな内容を入れる。</p>
+
+
+{% endif %}
+
 {% endblock %}

@@ -56,7 +56,7 @@ ROOT_URLCONF = 'mysite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR,'chat/templates')],
+        'DIRS': [os.path.join(BASE_DIR,'chat/templates'), os.path.join(BASE_DIR, "chat/static/")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -135,4 +135,4 @@ CHANNEL_LAYERS = {
 AUTH_USER_MODEL = 'chat.User'
 
 #LODIN_URL='chat:login'
-#LOGIN_REDIRECT_URL='chat:top'
+LOGIN_REDIRECT_URL='/'

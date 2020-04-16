@@ -1,28 +1,22 @@
 from django.shortcuts import render
 
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import (
-    LoginView, LogoutView
-)
-from django.views import generic
-from .forms import LoginForm
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import (
     LoginView, LogoutView
 )
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.signing import BadSignature, SignatureExpired, loads, dumps
-from django.http import Http404, HttpResponseBadRequest
-from django.shortcuts import redirect
+from django.http import Http404, HttpResponseBadRequest, HttpResponse
+from django.shortcuts import redirect, resolve_url
 from django.template.loader import render_to_string
 from django.views import generic
 from .forms import (
-    LoginForm, UserCreateForm
+    LoginForm,UserCreateForm,UserUpdateForm
 )
-
+from .models import Room
+from django.db.models import Q
 
 # Create your views here.
 
@@ -35,6 +29,9 @@ def room(request, room_name):
         'room_name': room_name
     })
 
+# def __str__(self)
+#     return self.room_name
+
 # def signup(request):
 #     form = UserForm()
 #     return render(request,'register/signup.html',{
@@ -44,20 +41,34 @@ def room(request, room_name):
 class Top(generic.TemplateView):
     template_name = 'register/login_top.html'
 
+    def get(self, request, **kwargs):
+        if not self.request.user.is_authenticated:
+            return super().get(request, **kwargs)
+        
+        context = {}
+        user = self.request.user
+        rooms = Room.objects.filter(occupation=user.occupation)
+        other_rooms=Room.objects.exclude(occupation=user.occupation)
+        context['rooms'] = rooms
+        context['other_rooms'] = other_rooms
+        return render(request, 'register/login_top.html', context=context)
+    #         template_name='chat/top.html'
+    #     else:
+    #         template_name='register/login_top.html'
+
 
 class Login(LoginView):
     """ログインページ"""
     form_class = LoginForm
     template_name = 'register/login.html'
-    redirect_authenticated_user = True
-    next = '/'
+    redirect_authentic_user=True
+    next='/'
+    
 
 
 class Logout(LogoutView):
     """ログアウトページ"""
-    template_name = 'register/login_stop.html'
-    redirect_authenticated_user = True
-    next = '/'
+    next_page = '/'
 
 User = get_user_model()
 ...
@@ -142,7 +153,7 @@ class UserCreate(generic.CreateView):
         # 仮登録と本登録の切り替えは、is_active属性を使うと簡単です。
         # 退会処理も、is_activeをFalseにするだけにしておくと捗ります。
         user = form.save(commit=False)
-        user.is_active = False
+        user.is_active = True
         user.save()
 
         # アクティベーションURLの送付
@@ -161,36 +172,57 @@ class UserCreate(generic.CreateView):
         # user.email_user(subject, message)
         return redirect('chat:login')
 
-class UserCreateComplete(generic.TemplateView):
-    """メール内URLアクセス後のユーザー本登録"""
-    template_name = 'register/user_create_complete.html'
-    timeout_seconds = getattr(settings, 'ACTIVATION_TIMEOUT_SECONDS', 60*60*24)  # デフォルトでは1日以内
+# class UserCreateComplete(generic.TemplateView):
+#     """メール内URLアクセス後のユーザー本登録"""
+#     template_name = 'register/user_create_complete.html'
+#     timeout_seconds = getattr(settings, 'ACTIVATION_TIMEOUT_SECONDS', 60*60*24)  # デフォルトでは1日以内
 
-    def get(self, request, **kwargs):
-        """tokenが正しければ本登録."""
-        token = kwargs.get('token')
-        try:
-            user_pk = loads(token, max_age=self.timeout_seconds)
+#     def get(self, request, **kwargs):
+#         """tokenが正しければ本登録."""
+#         token = kwargs.get('token')
+#         try:
+#             user_pk = loads(token, max_age=self.timeout_seconds)
 
-        # 期限切れ
-        except SignatureExpired:
-            return HttpResponseBadRequest()
+#         # 期限切れ
+#         except SignatureExpired:
+#             return HttpResponseBadRequest()
 
-        # tokenが間違っている
-        except BadSignature:
-            return HttpResponseBadRequest()
+#         # tokenが間違っている
+#         except BadSignature:
+#             return HttpResponseBadRequest()
 
-        # tokenは問題なし
-        else:
-            try:
-                user = User.objects.get(pk=user_pk)
-            except User.DoesNotExist:
-                return HttpResponseBadRequest()
-            else:
-                if not user.is_active:
-                    # 問題なければ本登録とする
-                    user.is_active = True
-                    user.save()
-                    return super().get(request, **kwargs)
+#         # tokenは問題なし
+#         else:
+#             try:
+#                 user = User.objects.get(pk=user_pk)
+#             except User.DoesNotExist:
+#                 return HttpResponseBadRequest()
+#             else:
+#                 if not user.is_active:
+#                     # 問題なければ本登録とする
+#                     user.is_active = True
+#                     user.save()
+#                     return super().get(request, **kwargs)
 
-        return HttpResponseBadRequest()
+#         return HttpResponseBadRequest()
+
+class OnlyYouMixin(UserPassesTestMixin):
+    raise_exception = True
+     # 今ログインしてるユーザーのpkと、そのユーザー情報ページのpkが同じか、又はスーパーユーザーなら許可
+    def test_func(self):
+        user = self.request.user
+        return user.pk == self.kwargs['pk'] or user.is_superuser
+
+
+class UserDetail(OnlyYouMixin, generic.DetailView):
+    model = User
+    template_name = 'register/user_detail.html'
+
+
+class UserUpdate(OnlyYouMixin, generic.UpdateView):
+    model = User
+    form_class = UserUpdateForm
+    template_name = 'register/user_form.html'
+
+    def get_success_url(self):
+        return resolve_url('chat:user_detail', pk=self.kwargs['pk'])
