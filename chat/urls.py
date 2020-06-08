@@ -6,7 +6,7 @@ app_name='chat'
 
 urlpatterns = [
     path('chat/', views.index, name='index'),
-    path('chat/<str:room_name>/', views.room, name='room'),
+    path('chat/<int:room_id>/', views.room, name='room'),
     # path('signup/',views.signup,name='signup'),
     path('', views.Top.as_view(), name='top'),
     path('login/', views.Login.as_view(), name='login'),

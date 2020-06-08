@@ -10,16 +10,16 @@
 
 <p>あなたの職業に関連したチャットルーム</p>
 {% for room in rooms %}
-<div class="room">
-    <p>{{ room.name }}</p>
-    
+<div>
+    <a href="{% url 'chat:room' room.pk %}">{{ room.name }}</a>
+
 </div>
 {% endfor %}
 
 <p>その他のチャットルーム</p>
 {% for room in other_rooms %}
 <div>
-    <p>{{room.name}}</p>
+    <a href="{% url 'chat:room' room.pk %}">{{room.name}}</a>
 </div>
 {% endfor %}
 {% else %}

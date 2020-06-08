@@ -76,10 +76,17 @@ class Occupation(models.Model):
 class User(AbstractBaseUser, PermissionsMixin):
     """カスタムユーザーモデル."""
 
+    gender_choices = [
+        ('男','男'),
+        ('女','女')
+    ]
+
     email = models.EmailField(_('email address'), unique=True)
     first_name = models.CharField(_('first name'), max_length=30, blank=True)
     last_name = models.CharField(_('last name'), max_length=150, blank=True)
-    occupation = models.ForeignKey(Occupation,null=True,on_delete=models.SET_NULL)
+    occupation = models.ForeignKey(Occupation, null=True, on_delete=models.SET_NULL)
+    gender = models.CharField(choices=gender_choices, default='男', max_length=100)
+    birthday = models.DateField(null=True)
 
     is_staff = models.BooleanField(
         _('staff status'),
@@ -137,3 +144,7 @@ class Room(models.Model):
 
     def __str__(self):
         return self.name
+
+class Message(models.Model):
+    content = models.TextField()
+    room = models.ForeignKey(Room,on_delete=models.CASCADE)

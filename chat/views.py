@@ -24,9 +24,15 @@ from django.db.models import Q
 def index(request):
     return render(request, 'chat/index.html', {})
 
-def room(request, room_name):
+def room(request, room_id):
+    try:
+        room = Room.objects.get(pk=room_id)
+    except Room.DoesNotExist:
+        room = None
+    if room is None:
+        return render(request,'chat/room_notfound.html')
     return render(request, 'chat/room.html', {
-        'room_name': room_name
+        'room': room
     })
 
 # def __str__(self)
